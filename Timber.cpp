@@ -1,5 +1,4 @@
-// Timber.cpp : This file contains the 'main' function. Program execution begins and ends there.
-// This is where game starts
+
 
 #include<sstream>
 #include<random>
@@ -15,7 +14,86 @@ Sprite branches[NUM_BRANCHES];  //an array of sprite objects that can hold 6 spr
 enum class side { LEFT, RIGHT, NONE };  //used to describe the position of individual branches as well as the player
 side branchPositions[NUM_BRANCHES]; // an array of side types with a size of 6; each of these will be either LEFT,RIGHT,NONE
 
-const int NUM_CLOUDS = 4;
+class Clouds : public Transformable {
+    Texture m_texture;
+    Sprite m_cloud;
+    float m_x_position;
+    float m_y_position;
+    bool m_active = false;
+    float m_speed = 0.0f;
+public:
+    Clouds(float x_pos, float y_pos) : m_x_position{ x_pos }, m_y_position{ y_pos }
+    {
+        m_texture.loadFromFile("graphics/cloud.png");
+        m_cloud.setTexture(m_texture);
+        m_cloud.setPosition(m_x_position, m_y_position);
+    }
+    float getSpeed()
+    {
+        return m_speed;
+    }
+    void setSpeed(float x)
+    {
+        m_speed = x;
+    }
+    bool getActive()
+    {
+        return m_active;
+    }
+    void setActive()
+    {
+        m_active = true;
+    }
+    void setInactive()
+    {
+        m_active = false;
+    }
+    Sprite getSprite()
+    {
+        return m_cloud;
+    }
+    void updatePosition(float x)
+    {
+        m_x_position += m_speed * x;
+        m_cloud.setPosition(m_x_position, m_y_position);
+    }
+    void updateInitialPosition(float x, float y)
+    {
+        m_x_position = x;
+        m_y_position = y;
+        m_cloud.setPosition(m_x_position, m_y_position);
+    }
+    float getXPosition()
+    {
+        return m_x_position;
+    }
+};
+class Tree : public Transformable {
+    Texture m_texture;
+    Sprite m_treeSprite;
+    float m_x_position = 810;
+    float m_y_position = 0;
+    float m_x_scale = 1;
+    float m_y_scale = 1;
+public:
+    Tree()
+    {
+        m_texture.loadFromFile("graphics/tree.png");
+        m_treeSprite.setTexture(m_texture);
+        m_treeSprite.setPosition(m_x_position, m_y_position);
+    }
+    Tree(float x_pos, float y_pos, float x_scale, float y_scale) : m_x_position{ x_pos }, m_y_position{ y_pos }, m_x_scale{ x_scale }, m_y_scale{ y_scale }
+    {
+        m_texture.loadFromFile("graphics/tree.png");
+        m_treeSprite.setTexture(m_texture);
+        m_treeSprite.setPosition(m_x_position, m_y_position);
+        m_treeSprite.setScale(m_x_scale, m_y_scale);
+    }
+    Sprite getSprite() {
+        return m_treeSprite;
+    }
+};
+
 
 int main()
 {
@@ -35,24 +113,12 @@ int main()
     spriteBackground.setTexture(textureBackground);
     //Set the sprite background to cover the screen
     spriteBackground.setPosition(0, 0);
-    //Make a tree sprite
-    Texture textureTree;
-    textureTree.loadFromFile("graphics/tree.png");
-    Sprite spriteTree;
-    spriteTree.setTexture(textureTree);
-    spriteTree.setPosition(810, 0);
-    Sprite spriteTree1;
-    spriteTree1.setTexture(textureTree);
-    spriteTree1.setPosition(1300, -150);
-    spriteTree1.setScale(0.5, 1);
-    Sprite spriteTree2;
-    spriteTree2.setTexture(textureTree);
-    spriteTree2.setPosition(1600, -240);
-    spriteTree2.setScale(0.5, 1);
-    Sprite spriteTree3;
-    spriteTree3.setTexture(textureTree);
-    spriteTree3.setPosition(200, 0);
-    spriteTree3.setScale(0.7, 1.3);
+    //Make tree sprites
+    Tree mainTree;
+    Tree spriteTree1(1300, -150, 0.5, 1);
+    Tree spriteTree2(1600, -240, 0.5, 1);
+    Tree spriteTree3(200, 0, 0.7, 1.3);
+
     //Prepare the bee
     Texture textureBee;
     textureBee.loadFromFile("graphics/bee.png");
@@ -63,28 +129,13 @@ int main()
     bool beeActive = false;
     //How fast can the bee fly
     float beeSpeed = 0.0f;
-    //make 3 cloud sprites from 1 texture
-    Texture textureCloud;
-    textureCloud.loadFromFile("graphics/cloud.png");
-    Sprite clouds[NUM_CLOUDS];
-    int position = 0;
-    for (int i = 0; i < NUM_CLOUDS; i++)
-    {
-        clouds[i].setTexture(textureCloud);
-        clouds[i].setPosition(0, position);
-        position += 100;
-    }
-    bool cloudsActive[NUM_CLOUDS];
-    for (int i = 0; i < NUM_CLOUDS; i++)
-    {
-        cloudsActive[i] = false;
-    }
-    float cloudSpeed[NUM_CLOUDS];
-    for (int i = 0; i < NUM_CLOUDS; i++)
-    {
-        cloudSpeed[i] = 0.0f;
-    }
-    
+    //make 4 cloud sprites 
+
+    Clouds cloud1(0, 50);
+    Clouds cloud2(0, 100);
+    Clouds cloud3(0, 200);
+    Clouds cloud4(0, 300);
+
     //Variables to control time itself
     Clock clock;
     //Time bar
@@ -116,7 +167,7 @@ int main()
     scoreText.setFont(font);
     messageText.setString("Press Enter to start!");
     scoreText.setString("Score = 0");
-    
+
     //Make it really big
     messageText.setCharacterSize(75);
     scoreText.setCharacterSize(100);
@@ -186,7 +237,7 @@ int main()
     Sound outOfTime;
     outOfTime.setBuffer(ootBuffer);
 
-     //Random values for cloud speed/ height
+    //Random values for cloud speed/ height
     std::random_device myRand;
     unsigned seed = myRand();
     std::default_random_engine myRandEngine(seed);
@@ -194,11 +245,11 @@ int main()
     std::uniform_int_distribution<int> myUnifDistSpeed(0, 200);
     std::uniform_int_distribution<int> myUnifDistBeeSpeed(200, 400);
     std::uniform_int_distribution<int> myUnifDistBeeHeight(500, 900);
-    
-        while (window.isOpen())
+
+    while (window.isOpen())
     {
         Event event;
-        while (window.pollEvent(event)) 
+        while (window.pollEvent(event))
         {
             if (event.type == Event::KeyReleased && !paused)
             {
@@ -228,9 +279,9 @@ int main()
             spritePlayer.setPosition(580, 720);
             acceptInput = true;
         }
-        
+
         //Wrap the player controls to make sure we are accepting input
-        
+
         if (acceptInput)
         {
             if (Keyboard::isKeyPressed(Keyboard::Right))
@@ -264,7 +315,7 @@ int main()
                 acceptInput = false;
                 chop.play();
             }
-            
+
         }
         //Update the scene
 
@@ -305,25 +356,73 @@ int main()
                 }
             }
             //Manage the clouds
-  
-            for (int i = 0; i < NUM_CLOUDS; i++)
+
+
+            if (!cloud1.getActive())
             {
-                if (!cloudsActive[i])
+                float s = myUnifDistSpeed(myRandEngine);
+                cloud1.setSpeed(s);
+                float height = myUnifDist(myRandEngine);
+                cloud1.updateInitialPosition(-200, height);
+                cloud1.setActive();
+            }
+            else
+            {
+                cloud1.updatePosition(dt.asSeconds());
+                if (cloud1.getXPosition() > 1920)
                 {
-                    cloudSpeed[i] = myUnifDistSpeed(myRandEngine);
-                    float height = myUnifDist(myRandEngine);
-                    clouds[i].setPosition(-200, height);
-                    cloudsActive[i] = true;
-                }
-                else
-                {
-                    clouds[i].setPosition(clouds[i].getPosition().x + (cloudSpeed[i] * dt.asSeconds()), clouds[i].getPosition().y);
-                    if (clouds[i].getPosition().x > 1920)
-                    {
-                        cloudsActive[i] = false;
-                    }
+                    cloud1.setInactive();
                 }
             }
+            if (!cloud2.getActive())
+            {
+                float s = myUnifDistSpeed(myRandEngine);
+                cloud2.setSpeed(s);
+                float height = myUnifDist(myRandEngine);
+                cloud2.updateInitialPosition(-200, height);
+                cloud2.setActive();
+            }
+            else
+            {
+                cloud2.updatePosition(dt.asSeconds());
+                if (cloud2.getXPosition() > 1920)
+                {
+                    cloud2.setInactive();
+                }
+            }
+            if (!cloud3.getActive())
+            {
+                float s = myUnifDistSpeed(myRandEngine);
+                cloud3.setSpeed(s);
+                float height = myUnifDist(myRandEngine);
+                cloud3.updateInitialPosition(-200, height);
+                cloud3.setActive();
+            }
+            else
+            {
+                cloud3.updatePosition(dt.asSeconds());
+                if (cloud3.getXPosition() > 1920)
+                {
+                    cloud3.setInactive();
+                }
+            }
+            if (!cloud4.getActive())
+            {
+                float s = myUnifDistSpeed(myRandEngine);
+                cloud4.setSpeed(s);
+                float height = myUnifDist(myRandEngine);
+                cloud4.updateInitialPosition(-200, height);
+                cloud4.setActive();
+            }
+            else
+            {
+                cloud4.updatePosition(dt.asSeconds());
+                if (cloud4.getXPosition() > 1920)
+                {
+                    cloud4.setInactive();
+                }
+            }
+
             //Update the branch sprites
             for (int i = 0; i < NUM_BRANCHES; i++)
             {
@@ -364,14 +463,14 @@ int main()
                 std::stringstream ss;
                 ss << "Score = " << score;   //concatenate variables into a string stream; whatever the value of score is, is concatenated; if score changes, ss will adapt each frame
                 scoreText.setString(ss.str());  //sets the String contained in ss to scoreText
-                
+
             }
             //has the player been squished by a branch?
             if (branchPositions[5] == playerSide)
             {
                 paused = true;
                 acceptInput = false;
-                
+
                 //Draw gravestone
                 spriteRIP.setPosition(525, 760);
                 //hide player
@@ -386,21 +485,25 @@ int main()
             }
         }
         window.clear();
-        
+
         //Draw our game scene here
         window.draw(spriteBackground);
-        for (int i = 0; i < NUM_CLOUDS; i++)
-        {
-            window.draw(clouds[i]);
-        }
-        window.draw(spriteTree);
-        window.draw(spriteTree1);
-        window.draw(spriteTree2);
-        window.draw(spriteTree3);
+
+        window.draw(cloud1.getSprite());
+        window.draw(cloud2.getSprite());
+        window.draw(cloud3.getSprite());
+        window.draw(cloud4.getSprite());
+
+        window.draw(mainTree.getSprite());
+        window.draw(spriteTree1.getSprite());
+        window.draw(spriteTree2.getSprite());
+        window.draw(spriteTree3.getSprite());
+
         for (int i = 0; i < NUM_BRANCHES; i++)
         {
             window.draw(branches[i]);
         }
+
         window.draw(spritePlayer);
         window.draw(spriteAxe);
         window.draw(spriteLog);
